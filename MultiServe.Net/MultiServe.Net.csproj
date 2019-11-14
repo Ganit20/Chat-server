@@ -119,6 +119,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Model\Config.cs" />
     <Compile Include="Model\User.cs" />
     <Compile Include="Model\Msg_Info.cs" />
     <Compile Include="Model\Room_info.cs" />
