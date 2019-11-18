@@ -1,5 +1,6 @@
 ﻿using MultiClientServer.Model;
 using MultiClientServer.ViewModel;
+using MultiServe.Net.ViewModel;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
@@ -15,10 +16,12 @@ namespace MultiServe.Net.Model
         public int Id;
         public string Name;
         public string IP;
+        public string password;
+        public string email;
         public int RoomID;
         public NetworkStream Stream;
         public TcpClient Tcp;
-        public User(int id,string name,NetworkStream stream, string ip,int roomid,TcpClient tcp)
+        public User(int id,string name,NetworkStream stream, string ip,int roomid,TcpClient tcp, string pass,string Email)
         {
              Id = id;
              Name = name;
@@ -26,6 +29,8 @@ namespace MultiServe.Net.Model
              IP = ip;
              RoomID = roomid;
              Tcp = tcp;
+             password = pass;
+             email = Email;
         }
         public string getName()
         {
@@ -47,11 +52,9 @@ namespace MultiServe.Net.Model
         public void Userlist(string message) {
             try
             {
-      
                     var reply = System.Text.Encoding.ASCII.GetBytes(message);
                     Stream.Write(reply, 0, reply.Length);
                     Array.Clear(reply, 0, reply.Length);
-           
             }
             catch (System.IO.IOException)
             {
@@ -60,54 +63,27 @@ namespace MultiServe.Net.Model
             catch (System.ObjectDisposedException) { }
         }
         public void RoomCreate(string message)
-        {try { 
+        {
+            try { 
             var reply = System.Text.Encoding.ASCII.GetBytes(message);
             Stream.Write(reply, 0, reply.Length);
-            
-        }catch(ObjectDisposedException)
-            {
-
-            }catch(System.IO.IOException)
-            {
-
-            }
+        }catch(ObjectDisposedException){ }
+            catch (System.IO.IOException) { }
         }
         public void SendMessage(string Message)
         {
-
                 try
                 {
-                    String data = null;
+                    string data = null;
                     Byte[] reply;
                     data = Message;
-                    String msgleng = data.Length.ToString();
-                    data = msgleng + data;
-                    while (data.IndexOf('?', 0, data.Length) < 3)
-                    {
-                        data = "0" + data;
-                    }
+                data = new TextOperations().MessageLength(Message);
                     reply = System.Text.Encoding.ASCII.GetBytes(data);
-
                     Stream.Write(reply, 0, reply.Length);
-
                 }
-                catch (ObjectDisposedException)
-                {
-
-                }
-                catch (System.IO.IOException)
-                {
-
-                }
+                catch (ObjectDisposedException) {   }
+                catch (System.IO.IOException) {}
           
         }
-        //public void userDisconnect()
-        //{
-        //    Listener.usersList.Remove(this);
-        //    var a = Listener.Rooms.Find(e => e.id == RoomID);
-        //    a.UserList.Remove(this);
-        
-           
-        //}
     }
 }

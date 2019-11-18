@@ -19,10 +19,11 @@ namespace MultiClientServer.ViewModel
         public static List<Room_info> Rooms = new List<Room_info>();
         public static int id = 0;
         public static int roomid = 1;
+        public static Dictionary<string, string> config = new Dictionary<string, string>();
         static public void StartListener()
         {
-            Dictionary<string, string> config = new Dictionary<string, string>();
-           
+            
+            
             if (File.Exists("Server.config"))
             {
                 var a = File.ReadAllText("server.config");
@@ -35,17 +36,23 @@ namespace MultiClientServer.ViewModel
                 Console.WriteLine("Creating server.config");
                 config.Add("IP", "127.0.0.1");
                 config.Add("Port", "8000");
+                config.Add("DB-server", "");
+                config.Add("DB-name", "");
+                config.Add("DB-User-id", "");
+                config.Add("DB-Password", "");
                 config.Add("Allow-room-Creation", "true");
                 File.WriteAllText("server.config",JsonConvert.SerializeObject(config));
                 Console.WriteLine("server.config created...");
 
             }
+            var db = new DBConnect(config);
             Room_info Main = new Room_info() { id = 0, name = "Main", RoomCreator = null };
             Rooms.Add(Main);
             IPHostEntry HostIp = Dns.GetHostEntry(Dns.GetHostName());
             IPAddress ip = IPAddress.Parse(config["IP"]);
             listen = new TcpListener(ip, 8000);
             Console.WriteLine("Listener Started at " + ip.ToString());
+            
             listen.Start();
             try
             {

@@ -1,4 +1,5 @@
-﻿using System;
+﻿using MultiServe.Net.Model;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net.Sockets;
@@ -15,12 +16,14 @@ namespace MultiClientServer.ViewModel
             switch (Command.Substring(0, Command.IndexOf(' ', 0, Command.Length)) )
             {
                 case "say":
+                    new Logs().saveLogs(Command);
                     var d5 = Command.IndexOf(' ', 0, Command.Length);
                     String message = Command.Substring(d5);
-                    GlobalMessage.ServerMessage(message);
+                    GlobalMessage.ServerMessage( message);
                     break;
 
                 case "kick":
+                    new Logs().saveLogs(Command);
                     if (Command.Length > 5)
                     {
                         try
@@ -67,12 +70,12 @@ namespace MultiClientServer.ViewModel
                 try
                 {
                    var kUser =  Listener.usersList.Find(u => u.Id.ToString().Contains(id.Trim()));
-                    GlobalMessage.ServerMessage(kUser.Name + " Have Been Kicked reason:");
+                    GlobalMessage.ServerMessage(kUser.Name + " Have Been Kicked reason: "+reason);
                     GlobalMessage.UserDisconnected(kUser);
                     kUser.Stream.Close();
                     Console.WriteLine(kUser.Name + " Have Been Kicked Reason: " + reason);
                 }
-                catch (NullReferenceException e) { Console.WriteLine("Wrong id"); }
+                catch (NullReferenceException ) { Console.WriteLine("Wrong id"); }
             }
             else Console.WriteLine("kick userid reason");
         }

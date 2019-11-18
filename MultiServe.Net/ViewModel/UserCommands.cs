@@ -18,17 +18,15 @@ namespace MultiServe.Net.ViewModel
         private string data;
         private byte[] bytes;
 
-        public void CreateRoom(String c, NetworkStream Stream, User oUser)
+        public void CreateRoom(NetworkStream Stream, User oUser)
         {
             try
             {
-                Int32 p = Stream.Read(message, 0, message.Length);
-                var b = System.Text.Encoding.ASCII.GetString(message, 0, message.Length);
-                var d = JsonConvert.DeserializeObject<Room_info>(b);
+               var d = new TextOperations().ReadRoom_info(Stream, message);
                 Room_info room = new Room_info();
                 room.Create(d.name, oUser, d.isPassword, d.password);
             }
-            catch (IOException e)
+            catch (IOException )
             {
                 GlobalMessage.UserDisconnected(oUser);
             }
@@ -39,13 +37,11 @@ namespace MultiServe.Net.ViewModel
             catch (System.ArgumentOutOfRangeException) { }
 
         }
-        public void ChangeRoom(String c, NetworkStream Stream, User oUser)
+        public void ChangeRoom( NetworkStream Stream, User oUser)
         {
             try
             {
-                Int32 p = Stream.Read(message, 0, message.Length);
-                var b = System.Text.Encoding.ASCII.GetString(message, 0, message.Length);
-                var o = JsonConvert.DeserializeObject<Room_info>(b);
+                var o = new TextOperations().ReadRoom_info(Stream, message);
                 var changer = Listener.usersList.Find(e => e.Name.Equals(o.name));
                 var OldRoom = Listener.Rooms.Find(e => e.id.Equals(changer.getRoomID()));
                 var NewRoom = Listener.Rooms.Find(e => e.name.Equals(o.NewRoom));
@@ -53,34 +49,20 @@ namespace MultiServe.Net.ViewModel
                 {
                     if (NewRoom.password.Equals(o.password))
                     {
-                        
-                        OldRoom.UserList.Remove(changer);
-                        NewRoom.UserList.Add(changer);
-                        changer.setRoomID(NewRoom.id);
-                        GlobalMessage.SendUserList();
-                        new Room_info().Check(OldRoom.id);
-                        changer.SendMessage("?SSG?You are chatting at: " + NewRoom.name + "?END");
-                    }else
-                    {
-                        changer.SendMessage("?SSG?WRONG PASSWORD ?END");
+                        new TextOperations().RoomChanger(changer, OldRoom, NewRoom);
                     }
-
+                    else
+                    {
+                        changer.SendMessage("SSG?WRONG PASSWORD ?END");
+                    }
                 }
                 else
                 {
-                    
-                    OldRoom.UserList.Remove(changer);
-                    NewRoom.UserList.Add(changer);
-                    changer.setRoomID(NewRoom.id);
-                    GlobalMessage.SendUserList();
-                    new Room_info().Check(OldRoom.id);
-                    changer.SendMessage("?SSG?You are chatting at: " + NewRoom.name + "?END");
+
+                    new TextOperations().RoomChanger(changer, OldRoom, NewRoom);
                 }
             }
-            catch (System.NullReferenceException)
-            {
-
-            }
+            catch (System.NullReferenceException) { }
         }
         public void ReplyMSG(String c, NetworkStream Stream, User oUser)
         {
@@ -105,11 +87,12 @@ namespace MultiServe.Net.ViewModel
                     {
                         string str = msgdata.MsgTime + " " + msgdata.From + "(" + msgdata.IP + ") : " + msgdata.Message;
                         var send = JsonConvert.SerializeObject(str);
+                        new Logs().saveLogs(str);
                         Console.WriteLine(str);
                         int g = Listener.usersList.Find(e => e.Name.Equals(msgdata.From)).getRoomID();
                         Task.Factory.StartNew(() =>
                         {
-                            Listener.Rooms.Find(e => e.id == g).SendRoom("?MSG?" + data + "?END");
+                            Listener.Rooms.Find(e => e.id == g).SendRoom("MSG?" + data + "?END");
                         });
 
                     }
@@ -117,7 +100,7 @@ namespace MultiServe.Net.ViewModel
 
                 }
             }
-            catch (IOException e)
+            catch (IOException )
             {
                 GlobalMessage.UserDisconnected(oUser);
             }
@@ -129,11 +112,9 @@ namespace MultiServe.Net.ViewModel
 
 
         }
-        public void CheckPassword(String c, NetworkStream Stream, User oUser)
+        public void CheckPassword( NetworkStream Stream, User oUser)
         {
-            Int32 p = Stream.Read(message, 0, message.Length);
-            var b = System.Text.Encoding.ASCII.GetString(message, 0, message.Length);
-            var json = JsonConvert.DeserializeObject<Room_info>(b);
+            var json = new TextOperations().ReadRoom_info(Stream, message);
             var d = Listener.Rooms.Find(e => e.name.Equals(json.name));
             if(d.password.Equals(json.password)) {
                 var g = new Room_info() { name = json.name, password = "True" };
@@ -150,6 +131,44 @@ namespace MultiServe.Net.ViewModel
                 msg = msg.Length + msg;
                 byte[] bmsg = System.Text.Encoding.ASCII.GetBytes(msg);
                 Stream.Write(bmsg, 0, bmsg.Length);
+            }
+        }
+        public bool Register(NetworkStream stream,string UserInfo)
+        {
+            var UserJson = JsonConvert.DeserializeObject<User>(UserInfo.Substring(4, UserInfo.LastIndexOf('?') - 4));
+            if (new DBConnect(Listener.config).UserRegister(UserJson.Name, UserJson.password, UserJson.email))
+            {
+                var msg = "RDC?" + "Confirmed" + "?END";
+                msg = new TextOperations().MessageLength(msg);
+                stream.Write(Encoding.ASCII.GetBytes(msg), 0, msg.Length);
+                return true;
+            }
+            else
+            {
+                var msg = "RDC?" + "Nope" + "?END";
+                msg = new TextOperations().MessageLength(msg);
+                stream.Write(Encoding.ASCII.GetBytes(msg), 0, msg.Length);
+                return false;
+            }
+        }
+        public bool Login(NetworkStream stream, string UserInfo,User oUser,TcpClient user)
+        {
+            var UserJson = JsonConvert.DeserializeObject<User>(UserInfo.Substring(4));
+            if (new DBConnect(Listener.config).UserLogin(UserJson.Name, UserJson.password))
+            {
+                oUser = new DBConnect(Listener.config).DownloadUserInfo(UserJson.Name, stream, user);
+                string msg = "LOG?TRUE?END";
+                msg = new TextOperations().MessageLength(msg);
+                HandleUser.oUser = oUser;
+                stream.Write(System.Text.Encoding.ASCII.GetBytes(msg), 0, msg.Length);
+                return true;
+            }
+            else
+            {
+                string msg = "LOG?WRONG?END";
+                msg = new TextOperations().MessageLength(msg);
+                stream.Write(System.Text.Encoding.ASCII.GetBytes(msg), 0, msg.Length);
+                return false;
             }
         }
     }

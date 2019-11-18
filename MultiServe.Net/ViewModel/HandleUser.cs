@@ -14,64 +14,68 @@ namespace MultiClientServer.ViewModel
 {
     class HandleUser
     {
-        public static void HandleUserStart(object obj )
+        public static User oUser = null;
+        public static void HandleUserStart(object obj)
         {
-            User oUser ;
             TcpClient user = (TcpClient)obj;
             var stream = user.GetStream();
             byte[] info = new Byte[100];
-            stream.Read(info, 0, info.Length);
-            var UserInfo = System.Text.Encoding.ASCII.GetString(info);
-            begin:
-            if (UserInfo.Substring(0, 4).Equals("user")){
-                var UserJson = JsonConvert.DeserializeObject<Msg_Info>(UserInfo.Substring(4));
-                 oUser = new User(Listener.id, UserJson.From, stream, UserJson.IP, 0, user);
-                Listener.usersList.Add(oUser);
-                GlobalMessage.UserJoined( oUser.Name, oUser.IP);
-                Listener.Rooms.Find(e => e.id == 0).UserList.Add(oUser);
-            } else
-                goto begin;
-             
-            byte[] ByteLength = new byte[4];
-            byte[] message = new byte[120];
-            while (true)
+            bool done = false;
+            while (!done)
             {
-                Array.Clear(message, 0, message.Length);
-
-                try
-                {
-                    Int32 byt = stream.Read(ByteLength, 0, 4);
-                    String c = System.Text.Encoding.ASCII.GetString(ByteLength, 0, 4);
-                    switch (c.Substring(0, c.IndexOf("?", 0, 4)))
-                    {
-                        case "CRC":
-                           new UserCommands().CreateRoom(c,stream,oUser);
-                            break;
-                        case "URC":
-                            new UserCommands().ChangeRoom(c, stream, oUser);
-                            break;
-                        default:
-                            new UserCommands().ReplyMSG(c, stream, oUser);
-                            break;
-                    }
-                }
-                catch (IOException e)
-                {
-                    GlobalMessage.UserDisconnected(oUser);
-                    break;
-                }
-                catch (ObjectDisposedException)
-                {
-                    GlobalMessage.UserDisconnected(oUser);
-                    break;
-                }
-                catch (System.ArgumentOutOfRangeException) { }
-            }
-        }
-      
+                stream.Read(info, 0, info.Length);
+            var UserInfo = System.Text.Encoding.ASCII.GetString(info);
             
-               
+            
+                switch (UserInfo.Substring(0, UserInfo.IndexOf("?", 0, 4))) {
+                    case "REG":
+                        done = new UserCommands().Register(stream, UserInfo); 
+                        break;
+                    case "LOG":
+                        done = new UserCommands().Login(stream, UserInfo,oUser,user);
+                        break;
+                } }
+                byte[] ByteLength = new byte[4];
+                byte[] message = new byte[120];
+                while (true)
+                {
+                    Array.Clear(message, 0, message.Length);
+
+                    try
+                    {
+                        Int32 byt = stream.Read(ByteLength, 0, 4);
+                        String c = System.Text.Encoding.ASCII.GetString(ByteLength, 0, 4);
+                        switch (c.Substring(0, c.IndexOf("?", 0, 4)))
+                        {
+                            case "CRC":
+                                new UserCommands().CreateRoom(stream, oUser);
+                                break;
+                            case "URC":
+                                new UserCommands().ChangeRoom(stream, oUser);
+                                break;
+                            default:
+                                new UserCommands().ReplyMSG(c, stream, oUser);
+                                break;
+                        }
+                    }
+                    catch (IOException)
+                    {
+                        GlobalMessage.UserDisconnected(oUser);
+                        break;
+                    }
+                    catch (ObjectDisposedException)
+                    {
+                        GlobalMessage.UserDisconnected(oUser);
+                        break;
+                    }
+                    catch (System.ArgumentOutOfRangeException) { }
+                }
             }
+
+
+
         }
+    }
+        
    
 

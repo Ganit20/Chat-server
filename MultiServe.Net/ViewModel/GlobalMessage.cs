@@ -1,5 +1,6 @@
 ﻿using MultiClientServer.Model;
 using MultiServe.Net.Model;
+using MultiServe.Net.ViewModel;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
@@ -15,12 +16,12 @@ namespace MultiClientServer.ViewModel
 
         public static int Control = 0;
         public static int ControlR = 0;
-        static int roomid=0;
 
         public static void UserJoined(String Username, String IP)
         {
                 Console.WriteLine(DateTime.Now + " New Connection " + Username + " IP: " + IP);
                 ServerMessage(Username + " Joined");
+            new Logs().saveLogs(DateTime.UtcNow + Username + " Joined");
             Task.Factory.StartNew(() =>
             {
                 GlobalMessage.SendUserList();
@@ -33,15 +34,18 @@ namespace MultiClientServer.ViewModel
 
         public static void UserDisconnected(User usr)
         {
-            usr.Tcp.Close();
-            Console.WriteLine("["+DateTime.UtcNow + "] " + usr.Name + " Disconnected");
-            var ql = Listener.Rooms.Find(u => u.id==usr.RoomID);
-            new Room_info().Check(usr.RoomID);
-            ql.UserList.Remove(usr);
-            Listener.usersList.Remove(usr);
-            SendUserList();
-            ServerMessage(usr.Name + " Disconnected");
-            
+            try
+            {
+                usr.Tcp.Close();
+                Console.WriteLine("[" + DateTime.UtcNow + "] " + usr.Name + " Disconnected");
+                var ql = Listener.Rooms.Find(u => u.id == usr.RoomID);
+                new Room_info().Check(usr.RoomID);
+                ql.UserList.Remove(usr);
+                Listener.usersList.Remove(usr);
+                SendUserList();
+                ServerMessage(usr.Name + " Disconnected");
+                new Logs().saveLogs(DateTime.UtcNow + usr.Name + " Disconnected");
+            }catch(System.NullReferenceException) { }
         }
         public static void ServerMessage(String messages)
         {
@@ -53,7 +57,7 @@ namespace MultiClientServer.ViewModel
             };
             var msgJson = JsonConvert.SerializeObject(msg);
             foreach (var item in Listener.Rooms) {
-                item.SendRoom("?" + msgJson);
+                item.SendRoom("MSG?"+msgJson +"?END");
                }
 
         }
@@ -68,12 +72,7 @@ namespace MultiClientServer.ViewModel
             }
             var json = JsonConvert.SerializeObject(roomlist, Formatting.Indented);
             b = b + json + "?END";
-            var leng = b.Length.ToString();
-            while(leng.Length<3)
-            {
-                leng = "0" + leng;
-            }
-            b = leng + "?" + b ;
+            b= new TextOperations().MessageLength(b);
             foreach (var item in Listener.Rooms)
             {
                 item.SendRoomList(b);
@@ -96,18 +95,13 @@ namespace MultiClientServer.ViewModel
                     }
                     var d = "USE?";
                     var msg = d + list + "?END";
-                    var leng = msg.Length.ToString();
-                    while (leng.Length < 3)
-                    {
-                        leng = "0" + leng;
-                    }
-                    msg = leng + "?" + msg ;
+                    msg = new TextOperations().MessageLength(msg);
                     foreach (var item in a.UserList)
                     {
                         a.UserListSend(msg);
                     }
                 }
-                roomid++;
+                
 
             }
             catch(InvalidOperationException) { }
