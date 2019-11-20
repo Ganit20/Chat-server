@@ -22,18 +22,28 @@ namespace MultiServe.Net.Model
             }
             if (!File.Exists(file)) {
                 fs = new StreamWriter(Path.Combine(file));
+                fs.Close();
             };
 
         }
 
         public void saveLogs(string message)
         {
-            lock (control) {
-                using (StreamWriter sw = File.AppendText(file))
+            lock (control)
+            {
+                try
                 {
-                    sw.WriteLine(message);
-                    sw.Close();
-                } }
+                    using (StreamWriter sw = File.AppendText(file))
+                    {
+                        sw.WriteLine(message);
+                        sw.Close();
+                    }
+                }
+                catch (IOException e)
+                {
+                    Console.WriteLine(e);
+                }
+            }
         }
     }
 }

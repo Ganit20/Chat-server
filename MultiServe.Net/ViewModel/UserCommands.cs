@@ -20,6 +20,7 @@ namespace MultiServe.Net.ViewModel
 
         public void CreateRoom(NetworkStream Stream, User oUser)
         {
+            
             try
             {
                var d = new TextOperations().ReadRoom_info(Stream, message);
@@ -35,6 +36,8 @@ namespace MultiServe.Net.ViewModel
                 GlobalMessage.UserDisconnected(oUser);
             }
             catch (System.ArgumentOutOfRangeException) { }
+            catch(System.NullReferenceException) { }
+            
 
         }
         public void ChangeRoom( NetworkStream Stream, User oUser)
@@ -43,7 +46,7 @@ namespace MultiServe.Net.ViewModel
             {
                 var o = new TextOperations().ReadRoom_info(Stream, message);
                 var changer = Listener.usersList.Find(e => e.Name.Equals(o.name));
-                var OldRoom = Listener.Rooms.Find(e => e.id.Equals(changer.getRoomID()));
+                var OldRoom = Listener.Rooms.Find(e => e.id.Equals(changer.GetRoomID()));
                 var NewRoom = Listener.Rooms.Find(e => e.name.Equals(o.NewRoom));
                 if (NewRoom.isPassword)
                 {
@@ -86,15 +89,30 @@ namespace MultiServe.Net.ViewModel
                     if (msgdata != null)
                     {
                         string str = msgdata.MsgTime + " " + msgdata.From + "(" + msgdata.IP + ") : " + msgdata.Message;
-                        var send = JsonConvert.SerializeObject(str);
-                        new Logs().saveLogs(str);
-                        Console.WriteLine(str);
-                        int g = Listener.usersList.Find(e => e.Name.Equals(msgdata.From)).getRoomID();
-                        Task.Factory.StartNew(() =>
+                        var g = Listener.usersList.Find(e => e.Name.Equals(msgdata.From));
+                        if (msgdata.Message[0].Equals('/') && g.Rank.Equals("admin"))
+                        { 
+                            Task.Factory.StartNew(() =>
+                            {
+                                new Commands().SetCommandAsync(msgdata.Message.Substring(1, msgdata.Message.Length - 1), msgdata.From);
+                            });
+                        }
+                        else if(!msgdata.Message[0].Equals('/'))
                         {
-                            Listener.Rooms.Find(e => e.id == g).SendRoom("MSG?" + data + "?END");
-                        });
-
+                            var send = JsonConvert.SerializeObject(str);
+                            new Logs().saveLogs(str);
+                            Console.WriteLine(str);
+                            int m = Listener.usersList.Find(e => e.Name.Equals(msgdata.From)).GetRoomID();
+                            Task.Factory.StartNew(() =>
+                            {
+                                Listener.Rooms.Find(e => e.id == m).SendRoom("MSG?" + data + "?END");
+                            });
+                        }else if(!g.Rank.Equals("admin"))
+                        {
+                            var send = " You Don't Have Permission for that";
+                            var json = JsonConvert.SerializeObject(new Msg_Info() { From = "info", Message = send });
+                            g.SendMessage("MSG?" + json + "?END");
+                        }
                     }
 
 
@@ -112,7 +130,7 @@ namespace MultiServe.Net.ViewModel
 
 
         }
-        public void CheckPassword( NetworkStream Stream, User oUser)
+        public void CheckPassword( NetworkStream Stream)
         {
             var json = new TextOperations().ReadRoom_info(Stream, message);
             var d = Listener.Rooms.Find(e => e.name.Equals(json.name));
@@ -153,21 +171,35 @@ namespace MultiServe.Net.ViewModel
         }
         public bool Login(NetworkStream stream, string UserInfo,User oUser,TcpClient user)
         {
+            string msg = String.Empty;
             var UserJson = JsonConvert.DeserializeObject<User>(UserInfo.Substring(4));
             if (new DBConnect(Listener.config).UserLogin(UserJson.Name, UserJson.password))
             {
                 oUser = new DBConnect(Listener.config).DownloadUserInfo(UserJson.Name, stream, user);
-                string msg = "LOG?TRUE?END";
-                msg = new TextOperations().MessageLength(msg);
-                HandleUser.oUser = oUser;
-                stream.Write(System.Text.Encoding.ASCII.GetBytes(msg), 0, msg.Length);
-                return true;
+                if(oUser.banned ==1)
+                {
+                    Msg_Info m = new Msg_Info() { From = "Server", MsgTime = DateTime.UtcNow.ToString(), Message = "You Are banned for " + oUser.bannedFor };
+                     msg = "BAN?"+JsonConvert.SerializeObject(m) +"?END";
+                    msg =new TextOperations().MessageLength(msg);
+                    stream.Write(Encoding.ASCII.GetBytes(msg), 0, msg.Length);
+                    GlobalMessage.UserDisconnected(oUser);
+                    return false;
+                }else
+                {
+                    HandleUser.oUser = oUser;
+                    msg = "LOG?TRUE?END";
+                    msg = new TextOperations().MessageLength(msg);
+                    stream.Write(Encoding.ASCII.GetBytes(msg), 0, msg.Length);
+                    return true;
+                }
+                
+                
             }
             else
             {
-                string msg = "LOG?WRONG?END";
+                 msg = "LOG?WRONG?END";
                 msg = new TextOperations().MessageLength(msg);
-                stream.Write(System.Text.Encoding.ASCII.GetBytes(msg), 0, msg.Length);
+                stream.Write(Encoding.ASCII.GetBytes(msg), 0, msg.Length);
                 return false;
             }
         }

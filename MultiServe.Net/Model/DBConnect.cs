@@ -45,11 +45,18 @@ namespace MultiServe.Net.Model
                     CreateDatabase();
                 }
 }               
-            catch (System.Collections.Generic.KeyNotFoundException e) {
+            catch (KeyNotFoundException ) {
                 Console.WriteLine("Open server.config and cofigure it then start again. \n\r Press any key to continue.");
                 Console.ReadKey();
                 Environment.Exit(1); }
            
+        }
+        public string rankAdmin(int id)
+        {
+            string change = "Update USER SET p_rank = 'admin' WHERE id = " + id + ";";
+           MySqlCommand createC = new MySqlCommand(change, connection);
+            createC.ExecuteNonQuery();
+            return "Done";
         }
         void CreateDatabase()
         {
@@ -98,7 +105,7 @@ namespace MultiServe.Net.Model
             }
         }
         public bool UserLogin(string name, string password)
-        {
+        {   
             string login = "SELECT password FROM USER WHERE name='"+name+"';";
             MySqlCommand loginC = new MySqlCommand(login, connection);
             object result = loginC.ExecuteScalar();
@@ -116,11 +123,25 @@ namespace MultiServe.Net.Model
             MySqlCommand cmd = new MySqlCommand(sql, connection);
             MySqlDataReader rdr = cmd.ExecuteReader();
             rdr.Read();
-            User oUser = new User(rdr.GetInt32("id"), rdr.GetString("name"), stream,null, 0, tcp, rdr.GetString("password"),rdr.GetString("email"));
+            User oUser = new User(rdr.GetInt32("id"), rdr.GetString("name"), stream, null, 0, tcp, rdr.GetString("password"), rdr.GetString("email"),rdr.GetString("p_rank"), rdr.GetInt32("Banned"), rdr.GetString("BANNEDFOR")); ;
             Listener.usersList.Add(oUser);
             GlobalMessage.UserJoined(oUser.Name, oUser.IP);
             Listener.Rooms.Find(e => e.id == 0).UserList.Add(oUser);
             return oUser;
+        }
+        public void BanUser(int id)
+        {
+                string register = "Update USER SET Banned = 1 WHERE id="+id +";";
+                MySqlCommand createC = new MySqlCommand(register, connection);
+                createC.ExecuteNonQuery();
+                Console.WriteLine("User "+ id +" banned");
+            }
+        public void unBanUser(int id)
+        {
+            string register = "Update USER SET Banned = 0 WHERE id=" + id + ";";
+            MySqlCommand createC = new MySqlCommand(register, connection);
+            createC.ExecuteNonQuery();
+            Console.WriteLine("User " + id + " unBanned");
         }
     }
 }

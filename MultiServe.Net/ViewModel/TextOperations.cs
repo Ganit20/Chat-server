@@ -23,7 +23,7 @@ namespace MultiServe.Net.ViewModel
         {
             OldRoom.UserList.Remove(changer);
             NewRoom.UserList.Add(changer);
-            changer.setRoomID(NewRoom.id);
+            changer.SetRoomID(NewRoom.id);
             GlobalMessage.SendUserList();
             new Room_info().Check(OldRoom.id);
             changer.SendMessage("SSG?You are chatting at: " + NewRoom.name + "?END");

@@ -20,7 +20,7 @@ namespace MultiClientServer
                 String Command = Console.ReadLine();
                 Task.Factory.StartNew(() =>
                 {
-                    new Commands().SetCommand(Command);
+                    new Commands().SetCommandAsync(Command,"server");
                 });
             }
         }

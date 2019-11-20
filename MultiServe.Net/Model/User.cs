@@ -18,10 +18,13 @@ namespace MultiServe.Net.Model
         public string IP;
         public string password;
         public string email;
+        public string Rank;
+        public int banned;
+        public string bannedFor;
         public int RoomID;
         public NetworkStream Stream;
         public TcpClient Tcp;
-        public User(int id,string name,NetworkStream stream, string ip,int roomid,TcpClient tcp, string pass,string Email)
+        public User(int id,string name,NetworkStream stream, string ip,int roomid,TcpClient tcp, string pass,string Email,string rank, int ban,string bannedFr)
         {
              Id = id;
              Name = name;
@@ -31,16 +34,19 @@ namespace MultiServe.Net.Model
              Tcp = tcp;
              password = pass;
              email = Email;
+            banned = ban;
+            bannedFor = bannedFr;
+            Rank = rank;
         }
-        public string getName()
+        public string GetName()
         {
             return Name;
         }
-        public int getRoomID()
+        public int GetRoomID ()
         {
             return RoomID;
         }
-        public void setRoomID(int Room)
+        public void SetRoomID(int Room)
         {
             RoomID = Room;
         }

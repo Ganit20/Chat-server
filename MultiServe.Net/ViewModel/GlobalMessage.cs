@@ -28,7 +28,7 @@ namespace MultiClientServer.ViewModel
             });
             Task.Factory.StartNew(() =>
             {
-                GlobalMessage.sendRoomList();
+                GlobalMessage.SendRoomList();
             });
         }
 
@@ -61,8 +61,9 @@ namespace MultiClientServer.ViewModel
                }
 
         }
-        public static void sendRoomList()
+        public static void SendRoomList()
         {
+            
             Dictionary<string, bool> roomlist = new Dictionary<string, bool>();
             string send = "RCC?";
             string b = send;
