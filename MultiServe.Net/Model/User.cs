@@ -88,7 +88,7 @@ namespace MultiServe.Net.Model
                     Stream.Write(reply, 0, reply.Length);
                 }
                 catch (ObjectDisposedException) {   }
-                catch (System.IO.IOException) {}
+                catch (System.IO.IOException) { GlobalMessage.UserDisconnected(this); }
           
         }
     }

@@ -51,6 +51,13 @@ namespace MultiServe.Net.Model
                 Environment.Exit(1); }
            
         }
+        public string rankNormal(int id)
+        {
+            string change = "Update USER SET p_rank = 'Normal' WHERE id = " + id + ";";
+            MySqlCommand createC = new MySqlCommand(change, connection);
+            createC.ExecuteNonQuery();
+            return "Done";
+        }
         public string rankAdmin(int id)
         {
             string change = "Update USER SET p_rank = 'admin' WHERE id = " + id + ";";

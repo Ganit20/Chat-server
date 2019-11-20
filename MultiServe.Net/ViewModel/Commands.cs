@@ -1,5 +1,6 @@
 ﻿using MultiClientServer.Model;
 using MultiServe.Net.Model;
+using MultiServe.Net.ViewModel;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
@@ -33,10 +34,28 @@ namespace MultiClientServer.ViewModel
 
                     int id;
                     int.TryParse(Command.Substring(d),out id);
-                    
+                    var gu = Listener.usersList.Find(e => e.Id==id);
+                    if(G!=null) {
+                        
+                        var json = JsonConvert.SerializeObject(new Msg_Info() { From = "info", Message = "Permission Granted" });
+                        G.SendMessage("MSG?" + json + "?END");
+                    }
                     sendAdminInfo( new DBConnect(Listener.config).rankAdmin(id));
                     break;
-                    
+                case "de-admin":
+                    var de = Command.IndexOf(' ', 0, Command.Length);
+
+                    int ide;
+                    int.TryParse(Command.Substring(de), out id);
+                    var ge = Listener.usersList.Find(e => e.Id == id);
+                    if (ge != null)
+                    {
+                        var json = JsonConvert.SerializeObject(new Msg_Info() { From = "info", Message = "Permission Lost" });
+                        G.SendMessage("MSG?" + json + "?END");
+                    }
+                    sendAdminInfo(new DBConnect(Listener.config).rankNormal(id));
+                    break;
+
                 case "ban":
                     new Logs().saveLogs(Command);
                     if (Command.Length > 5)
@@ -81,6 +100,53 @@ namespace MultiClientServer.ViewModel
                         Console.WriteLine("unban ID ");
                     }
                     break;
+                case "clear":
+                    if (person == "server") { Console.Clear(); }
+                    new Logs().saveLogs(Command);
+                    
+                    break;
+                case "d-room":
+                    new Logs().saveLogs(person+ ": "+Command);
+                    if (Command.Length > 5)
+                    {
+                        try
+                        {
+                            var d1 = Command.IndexOf(' ', 0, Command.Length);
+                            var d22 = Command.IndexOf(' ', d1);
+                            string id1 = Command.Substring(d1);
+                            int.TryParse(id1, out int idi);
+                            var c = Listener.Rooms.Find(e => e.id == idi);
+                            if (c.name != "Main")
+                            {
+                                foreach (var item in c.UserList)
+                                {
+                                    item.SetRoomID(0);
+                                    Listener.Rooms.Find(e => e.id == 0).UserList.Add(item);
+                                    var json = JsonConvert.SerializeObject(new Msg_Info() { From = "info", Message = "Your channel has been deleted you are chatting at: Main" });
+                                    G.SendMessage("MSG?" + json + "?END");
+                                    GlobalMessage.ServerMessage("Room " + c.name + " has been deleted by: " + person);
+                                    Listener.Rooms.Remove(c);
+                                }
+                            }else
+                            {
+                                if (person != "server")
+                                    sendAdminInfo("You can not delete main you sneaky bastard");
+                                else Console.WriteLine("You can not delete main you sneaky bastard");
+                            }
+                        }
+                        catch (ArgumentOutOfRangeException)
+                        {
+                            Console.WriteLine("d-room ID");
+                        }catch(System.NullReferenceException)
+                        {
+                            Console.WriteLine("Wrong ID");
+                        }
+                    }
+                    else
+                    {
+                        Console.WriteLine("d-room ID");
+                    }
+                    break;
                 case "kick":
                     new Logs().saveLogs(Command);
                     if (Command.Length > 5)
@@ -121,20 +187,50 @@ namespace MultiClientServer.ViewModel
                         sendAdminInfo(send);
                     }
                             break;
+                case "room-list":
+                    if (person == "server")
+                    {
+                        foreach (var user in Listener.Rooms)
+                        {
+                            Console.WriteLine($"\r\n ID: {user.id} NAME: {user.name} USERS: {user.UserList.Count}");
+                        }
+                    }
+                    else
+                    {
+                        string send = "";
+                        foreach (var user in Listener.Rooms)
+                        {
+                            send += ($"\r\n ID: {user.id} NAME: {user.name} USERS: {user.UserList.Count}");
+                        }
+                        sendAdminInfo(send);
+                    }
+                    break;
                 case "help":
                     if (person == "server")
                     {
                         Console.WriteLine("list - show all users online and their id");
                         Console.WriteLine("kick ID REASON - kicks user and tells why");
                         Console.WriteLine("ban ID REASON - kicks user and tells why");
-                        Console.WriteLine("say MESSAGE - say somtething as serwer");
+                        Console.WriteLine("say MESSAGE - say somtething as server");
+                        Console.WriteLine("unban ID - unban user");
+                        Console.WriteLine("admin ID - grant admin permissions");
+                        Console.WriteLine("de-admin ID - delete admin permissions ");
+                        Console.WriteLine("room-list - list of rooms NAME ID and Users");
+                        Console.WriteLine("d-room ID - list of rooms NAME ID and Users");
+                        Console.WriteLine("clear - clear server Console");
                     }
                     else
                     {
                         sendAdminInfo("list - show all users online and their id \n\r" +
                         "kick ID REASON - kicks user and tells why \n\r" +
                         "ban ID REASON - kicks user and tells why \n\r" +
-                       "say MESSAGE - say somtething as serwer \n\r");
+                        "unban ID - unban user \n\r" +
+                       "say MESSAGE - say somtething as server \n\r" +
+                       "admin ID - grant admin permissions \n\r" +
+                        "de-admin ID - delete admin permissions \n\r" +
+                        "room-list - list of rooms NAME ID and Users\n\r" +
+                        "d-room ID - Delete room\n\r"
+                        ) ;
                     }
                     break;
                 default:
