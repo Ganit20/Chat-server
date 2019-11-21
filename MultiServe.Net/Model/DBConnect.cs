@@ -77,6 +77,7 @@ namespace MultiServe.Net.Model
                    "email varchar(40) not null UNIQUE, " +
                    "p_rank varchar(10) not null DEFAULT 'Normal', " +
                    "Banned int(1) not null DEFAULT 0," +
+                   "BANNEDFOR VARCHAR(120) not null DEFAULT 'no'," +
                    "constraint pk_example primary key(id));" ;
             MySqlCommand createC = new MySqlCommand(create, connection);
             createC.ExecuteNonQuery();
@@ -118,6 +119,7 @@ namespace MultiServe.Net.Model
             object result = loginC.ExecuteScalar();
             if (Convert.ToString(result).Equals(password))
             {
+                Console.WriteLine("User " + name + " looged in");
                 return true;
 
             }
@@ -125,16 +127,26 @@ namespace MultiServe.Net.Model
         }
         public User DownloadUserInfo(string name,NetworkStream stream,TcpClient tcp)
         {
-
-            string sql = "SELECT * FROM USER WHERE name='"+name+"';";
-            MySqlCommand cmd = new MySqlCommand(sql, connection);
-            MySqlDataReader rdr = cmd.ExecuteReader();
-            rdr.Read();
-            User oUser = new User(rdr.GetInt32("id"), rdr.GetString("name"), stream, null, 0, tcp, rdr.GetString("password"), rdr.GetString("email"),rdr.GetString("p_rank"), rdr.GetInt32("Banned"), rdr.GetString("BANNEDFOR")); ;
-            Listener.usersList.Add(oUser);
-            GlobalMessage.UserJoined(oUser.Name, oUser.IP);
-            Listener.Rooms.Find(e => e.id == 0).UserList.Add(oUser);
-            return oUser;
+            try
+            {
+                string sql = "SELECT * FROM USER WHERE name='" + name + "';";
+                MySqlCommand cmd = new MySqlCommand(sql, connection);
+                MySqlDataReader rdr = cmd.ExecuteReader();
+                rdr.Read();
+                Console.WriteLine("Downloading info...");
+                User oUser = new User(rdr.GetInt32("id"), rdr.GetString("name"), stream, null, 0, tcp, rdr.GetString("password"), rdr.GetString("email"), rdr.GetString("p_rank"), rdr.GetInt32("Banned"), rdr.GetString("BANNEDFOR")); ;
+                Console.WriteLine("user created");
+                Listener.usersList.Add(oUser);
+                Console.WriteLine("added");
+                GlobalMessage.UserJoined(oUser.Name, oUser.IP);
+                Listener.Rooms.Find(e => e.id == 0).UserList.Add(oUser);
+                Console.WriteLine("returning");
+                return oUser;
+            }catch(MySqlException e)
+            {
+                Console.WriteLine(e);
+                return new User(0, null, null, null, 0, null, null, null, null, 0, null);
+            }
         }
         public void BanUser(int id)
         {

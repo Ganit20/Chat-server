@@ -32,13 +32,14 @@ namespace MultiClientServer.ViewModel
                     {
                         case "REG":
                             done = new UserCommands().Register(stream, UserInfo);
+                            goto End;
                             break;
                         case "LOG":
                             done = new UserCommands().Login(stream, UserInfo, oUser, user);
                             break;
                     }
-                } catch (System.IO.IOException) { }
-                catch (System.ObjectDisposedException) { goto End; }
+                } catch (System.IO.IOException e) { }
+                catch (System.ObjectDisposedException e) { goto End; Console.WriteLine(e); }
             }
             byte[] ByteLength = new byte[4];
             byte[] message = new byte[120];
@@ -63,17 +64,19 @@ namespace MultiClientServer.ViewModel
                             break;
                     }
                 }
-                catch (IOException)
+                catch (IOException e )
                 {
+                    Console.WriteLine(e);
                     GlobalMessage.UserDisconnected(oUser);
                     break;
                 }
-                catch (ObjectDisposedException)
+                catch (ObjectDisposedException e)
                 {
+                    Console.WriteLine(e);
                     GlobalMessage.UserDisconnected(oUser);
                     break;
                 }
-                catch (System.ArgumentOutOfRangeException) { }
+                catch (System.ArgumentOutOfRangeException e) { Console.WriteLine(e); }
             }
         End:;
         }

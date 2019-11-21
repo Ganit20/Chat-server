@@ -126,7 +126,8 @@ namespace MultiServe.Net.ViewModel
             {
                 GlobalMessage.UserDisconnected(oUser);
             }
-            catch (System.ArgumentOutOfRangeException) { }
+            catch (ArgumentOutOfRangeException) { }
+            catch (IndexOutOfRangeException) { }
 
 
         }
@@ -176,8 +177,10 @@ namespace MultiServe.Net.ViewModel
             if (new DBConnect(Listener.config).UserLogin(UserJson.Name, UserJson.password))
             {
                 oUser = new DBConnect(Listener.config).DownloadUserInfo(UserJson.Name, stream, user);
+                Console.WriteLine("Ban checking...");
                 if(oUser.banned ==1)
                 {
+                    Console.WriteLine(oUser.Name + " is banned disconnecting");
                     Msg_Info m = new Msg_Info() { From = "Server", MsgTime = DateTime.UtcNow.ToString(), Message = "You Are banned for " + oUser.bannedFor };
                      msg = "BAN?"+JsonConvert.SerializeObject(m) +"?END";
                     msg =new TextOperations().MessageLength(msg);
@@ -186,6 +189,7 @@ namespace MultiServe.Net.ViewModel
                     return false;
                 }else
                 {
+                    Console.WriteLine(oUser.Name + " Logged");
                     HandleUser.oUser = oUser;
                     msg = "LOG?TRUE?END";
                     msg = new TextOperations().MessageLength(msg);

@@ -50,10 +50,16 @@ namespace MultiClientServer.ViewModel
             Rooms.Add(Main);
             IPHostEntry HostIp = Dns.GetHostEntry(Dns.GetHostName());
             IPAddress ip = IPAddress.Parse(config["IP"]);
-            listen = new TcpListener(ip, 8000);
-            Console.WriteLine("Listener Started at " + ip.ToString());
-            
-            listen.Start();
+            try
+            {
+                listen = new TcpListener(ip, 8000);
+                Console.WriteLine("Listener Started at " + ip.ToString());
+
+                listen.Start();
+            }catch(System.Net.Sockets.SocketException e)
+            {
+                Console.WriteLine(e);
+            }
             try
             {
                 while (true)
@@ -67,8 +73,9 @@ namespace MultiClientServer.ViewModel
                    
                 }
             }
-            catch (SocketException)
+            catch (SocketException e)
             {
+                Console.WriteLine(e);
                 listen.Stop();
     }
    }
