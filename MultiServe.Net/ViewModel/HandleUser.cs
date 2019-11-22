@@ -19,14 +19,14 @@ namespace MultiClientServer.ViewModel
         {
             TcpClient user = (TcpClient)obj;
             var stream = user.GetStream();
-            byte[] info = new Byte[100];
+            byte[] info = new Byte[8];
             bool done = false;
             while (!done)
             {
                 try {
-                    stream.Read(info, 0, info.Length);
+                    stream.Read(info, 0, 8);
                     var UserInfo = System.Text.Encoding.ASCII.GetString(info);
-
+                    
 
                     switch (UserInfo.Substring(0, UserInfo.IndexOf("?", 0, 4)))
                     {
@@ -41,7 +41,7 @@ namespace MultiClientServer.ViewModel
                 } catch (System.IO.IOException e) { }
                 catch (System.ObjectDisposedException e) { goto End; Console.WriteLine(e); }
             }
-            byte[] ByteLength = new byte[4];
+            byte[] ByteLength = new byte[8];
             byte[] message = new byte[120];
             while (true)
             {
@@ -49,17 +49,17 @@ namespace MultiClientServer.ViewModel
 
                 try
                 {
-                    Int32 byt = stream.Read(ByteLength, 0, 4);
-                    String c = System.Text.Encoding.ASCII.GetString(ByteLength, 0, 4);
+                    Int32 byt = stream.Read(ByteLength, 0, 8);
+                    string c = System.Text.Encoding.ASCII.GetString(ByteLength, 0, 8);
                     switch (c.Substring(0, c.IndexOf("?", 0, 4)))
                     {
                         case "CRC":
-                            new UserCommands().CreateRoom(stream, oUser);
+                            new UserCommands().CreateRoom(stream, oUser,c);
                             break;
                         case "URC":
-                            new UserCommands().ChangeRoom(stream, oUser);
+                            new UserCommands().ChangeRoom(stream, oUser,c);
                             break;
-                        default:
+                        case "MSG":
                             new UserCommands().ReplyMSG(c, stream, oUser);
                             break;
                     }

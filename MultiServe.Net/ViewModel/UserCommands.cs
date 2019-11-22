@@ -1,4 +1,6 @@
-﻿using MultiClientServer.Model;
+﻿
+using App3;
+using MultiClientServer.Model;
 using MultiClientServer.ViewModel;
 using MultiServe.Net.Model;
 using Newtonsoft.Json;
@@ -18,16 +20,17 @@ namespace MultiServe.Net.ViewModel
         private string data;
         private byte[] bytes;
 
-        public void CreateRoom(NetworkStream Stream, User oUser)
+        public void CreateRoom(NetworkStream Stream, User oUser, string info)
         {
-            
+
             try
             {
-               var d = new TextOperations().ReadRoom_info(Stream, message);
+
+                var d = new TextOperations().ReadRoom_info(Stream, info);
                 Room_info room = new Room_info();
                 room.Create(d.name, oUser, d.isPassword, d.password);
             }
-            catch (IOException )
+            catch (IOException)
             {
                 GlobalMessage.UserDisconnected(oUser);
             }
@@ -36,11 +39,11 @@ namespace MultiServe.Net.ViewModel
                 GlobalMessage.UserDisconnected(oUser);
             }
             catch (System.ArgumentOutOfRangeException) { }
-            catch(System.NullReferenceException) { }
-            
+            catch (System.NullReferenceException) { }
+
 
         }
-        public void ChangeRoom( NetworkStream Stream, User oUser)
+        public void ChangeRoom(NetworkStream Stream, User oUser, string message)
         {
             try
             {
@@ -56,7 +59,7 @@ namespace MultiServe.Net.ViewModel
                     }
                     else
                     {
-                        changer.SendMessage("SSG?WRONG PASSWORD ?END");
+                        changer.SendMessage("SSG?","WRONG PASSWORD");
                     }
                 }
                 else
@@ -67,58 +70,55 @@ namespace MultiServe.Net.ViewModel
             }
             catch (System.NullReferenceException) { }
         }
-        public void ReplyMSG(String c, NetworkStream Stream, User oUser)
+        public void ReplyMSG(string c, NetworkStream Stream, User oUser)
         {
             try
             {
-                if (c.IndexOf("?", 0, 4) > 0)
+                var pg = new TextOperations().LengthStream(c);
+                byte[] bytes = new byte[pg];
+                Int32 leng = Stream.Read(bytes, 0, bytes.Length);
+
+                var i = System.Text.Encoding.UTF8.GetString(bytes);
+                var messag = new Encryption().Decrypt(bytes);
+                var msgdata = JsonConvert.DeserializeObject<Msg_Info>(messag);
+                data = Encoding.ASCII.GetString(message, 0, message.Length);
+               
+
+
+                if (msgdata != null)
                 {
-
-                    String d = c.Substring(0, c.IndexOf('?', 0, 4));
-                    int bl = int.Parse(d);
-                    bytes = new byte[bl];
-                    Int32 leng = Stream.Read(bytes, 0, bl);
-                    message = new byte[leng];
-                    message = bytes;
-
-                    data = Encoding.ASCII.GetString(message, 0, message.Length);
-                    String msgleng = message.Length + "?";
-                    while (msgleng.Length < 4) msgleng = "0" + msgleng;
-
-                    var msgdata = JsonConvert.DeserializeObject<Msg_Info>(data);
-                    if (msgdata != null)
+                    string str = msgdata.MsgTime + " " + msgdata.From + "(" + msgdata.IP + ") : " + msgdata.Message;
+                    var g = Listener.usersList.Find(e => e.Name.Equals(msgdata.From));
+                    if (msgdata.Message[0].Equals('/') && g.Rank.Equals("admin"))
                     {
-                        string str = msgdata.MsgTime + " " + msgdata.From + "(" + msgdata.IP + ") : " + msgdata.Message;
-                        var g = Listener.usersList.Find(e => e.Name.Equals(msgdata.From));
-                        if (msgdata.Message[0].Equals('/') && g.Rank.Equals("admin"))
-                        { 
-                            Task.Factory.StartNew(() =>
-                            {
-                                new Commands().SetCommandAsync(msgdata.Message.Substring(1, msgdata.Message.Length - 1), msgdata.From);
-                            });
-                        }
-                        else if(!msgdata.Message[0].Equals('/'))
+                        Task.Factory.StartNew(() =>
                         {
-                            var send = JsonConvert.SerializeObject(str);
-                            new Logs().saveLogs(str);
-                            Console.WriteLine(str);
-                            int m = Listener.usersList.Find(e => e.Name.Equals(msgdata.From)).GetRoomID();
-                            Task.Factory.StartNew(() =>
-                            {
-                                Listener.Rooms.Find(e => e.id == m).SendRoom("MSG?" + data + "?END");
-                            });
-                        }else if(!g.Rank.Equals("admin"))
-                        {
-                            var send = " You Don't Have Permission for that";
-                            var json = JsonConvert.SerializeObject(new Msg_Info() { From = "info", Message = send });
-                            g.SendMessage("MSG?" + json + "?END");
-                        }
+                            new Commands().SetCommandAsync(msgdata.Message.Substring(1, msgdata.Message.Length - 1), msgdata.From);
+                        });
                     }
-
-
+                    else if (!msgdata.Message[0].Equals('/'))
+                    {
+                        var send = JsonConvert.SerializeObject(str);
+                        new Logs().saveLogs(str);
+                        Console.WriteLine(str);
+                        int m = Listener.usersList.Find(e => e.Name.Equals(msgdata.From)).GetRoomID();
+                        
+                        Task.Factory.StartNew(() =>
+                        {
+                            Listener.Rooms.Find(e => e.id == m).SendRoom("MSG?", messag);
+                        });
+                    } else if (!g.Rank.Equals("admin"))
+                    {
+                        var send = " You Don't Have Permission for that";
+                        var json = JsonConvert.SerializeObject(new Msg_Info() { From = "info", Message = send });
+                        g.SendMessage("MSG?" , json);
+                    }
                 }
+
+
             }
-            catch (IOException )
+
+            catch (IOException)
             {
                 GlobalMessage.UserDisconnected(oUser);
             }
@@ -130,9 +130,10 @@ namespace MultiServe.Net.ViewModel
             catch (IndexOutOfRangeException) { }
 
 
-        }
+        } 
         public void CheckPassword( NetworkStream Stream)
         {
+            string message = "l";
             var json = new TextOperations().ReadRoom_info(Stream, message);
             var d = Listener.Rooms.Find(e => e.name.Equals(json.name));
             if(d.password.Equals(json.password)) {
@@ -172,10 +173,18 @@ namespace MultiServe.Net.ViewModel
         }
         public bool Login(NetworkStream stream, string UserInfo,User oUser,TcpClient user)
         {
-            string msg = String.Empty;
-            var UserJson = JsonConvert.DeserializeObject<User>(UserInfo.Substring(4));
+            string msg;
+            byte[] ByteLength = new byte[4];
+            string d = UserInfo.Substring(UserInfo.IndexOf('?') + 1, UserInfo.LastIndexOf('?') - UserInfo.IndexOf('?') - 1);
+            int bl = int.Parse(d);
+                byte[] bytes = new byte[bl];
+                Int32 leng = stream.Read(bytes, 0, bl);
+            Console.WriteLine(System.Text.Encoding.UTF8.GetString(bytes));
+            var messag = new Encryption().Decrypt(bytes);
+            var UserJson = JsonConvert.DeserializeObject<User>(messag);
             if (new DBConnect(Listener.config).UserLogin(UserJson.Name, UserJson.password))
             {
+                
                 oUser = new DBConnect(Listener.config).DownloadUserInfo(UserJson.Name, stream, user);
                 Console.WriteLine("Ban checking...");
                 if(oUser.banned ==1)

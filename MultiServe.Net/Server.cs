@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Threading;
 using System.Threading.Tasks;
+
 using MultiClientServer.ViewModel;
 
 namespace MultiClientServer
@@ -10,6 +11,7 @@ namespace MultiClientServer
         public Server()
         {
             Console.WriteLine("starting server");
+           
            Task.Factory.StartNew(() => {
                Listener.StartListener();
                });

@@ -1,4 +1,5 @@
-﻿using MultiClientServer.Model;
+﻿using App3;
+using MultiClientServer.Model;
 using MultiClientServer.ViewModel;
 using MultiServe.Net.ViewModel;
 using Newtonsoft.Json;
@@ -55,10 +56,10 @@ namespace MultiServe.Net.Model
             Stream.Close();
             Tcp.Close();
         }
-        public void Userlist(string message) {
+        public void Userlist(byte[] reply) {
             try
             {
-                    var reply = System.Text.Encoding.ASCII.GetBytes(message);
+                    
                     Stream.Write(reply, 0, reply.Length);
                     Array.Clear(reply, 0, reply.Length);
             }
@@ -68,24 +69,27 @@ namespace MultiServe.Net.Model
             }
             catch (System.ObjectDisposedException) { }
         }
-        public void RoomCreate(string message)
+        public void RoomCreate(byte[] message)
         {
             try { 
-            var reply = System.Text.Encoding.ASCII.GetBytes(message);
-            Stream.Write(reply, 0, reply.Length);
+           
+            Stream.Write(message, 0, message.Length);
         }catch(ObjectDisposedException){ }
             catch (System.IO.IOException) { }
         }
-        public void SendMessage(string Message)
+        public void SendMessage(string prefix , string Message)
         {
                 try
                 {
                     string data = null;
-                    Byte[] reply;
+                    byte[] reply;
                     data = Message;
-                data = new TextOperations().MessageLength(Message);
-                    reply = System.Text.Encoding.ASCII.GetBytes(data);
-                    Stream.Write(reply, 0, reply.Length);
+                
+                reply = new Encryption().Encrypt(prefix + data);
+                var replylength = new TextOperations().byteLength(reply.Length.ToString()) ;
+                byte[] k = System.Text.Encoding.ASCII.GetBytes(replylength);
+                var msg = new TextOperations().addBytes(k, reply);
+                    Stream.Write(msg, 0, msg.Length);
                 }
                 catch (ObjectDisposedException) {   }
                 catch (System.IO.IOException) { GlobalMessage.UserDisconnected(this); }

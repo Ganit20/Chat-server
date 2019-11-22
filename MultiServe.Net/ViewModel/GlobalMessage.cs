@@ -1,4 +1,5 @@
-﻿using MultiClientServer.Model;
+﻿using App3;
+using MultiClientServer.Model;
 using MultiServe.Net.Model;
 using MultiServe.Net.ViewModel;
 using Newtonsoft.Json;
@@ -57,7 +58,7 @@ namespace MultiClientServer.ViewModel
             };
             var msgJson = JsonConvert.SerializeObject(msg);
             foreach (var item in Listener.Rooms) {
-                item.SendRoom("MSG?"+msgJson +"?END");
+                item.SendRoom("MSG?",msgJson );
                }
 
         }
@@ -66,17 +67,19 @@ namespace MultiClientServer.ViewModel
             
             Dictionary<string, bool> roomlist = new Dictionary<string, bool>();
             string send = "RCC?";
-            string b = send;
+            
             foreach (var roomer in Listener.Rooms)
             {
                 roomlist.Add(roomer.name, roomer.isPassword);
             }
             var json = JsonConvert.SerializeObject(roomlist, Formatting.Indented);
-            b = b + json + "?END";
-            b= new TextOperations().MessageLength(b);
+            var b =new Encryption().Encrypt(send + json);
+            var j= new TextOperations().byteLength(b.Length.ToString());
+            var jj = new TextOperations().addBytes(System.Text.Encoding.UTF8.GetBytes(j), b);
+
             foreach (var item in Listener.Rooms)
             {
-                item.SendRoomList(b);
+                item.SendRoomList(jj); ;
             }
         }
 
@@ -95,11 +98,14 @@ namespace MultiClientServer.ViewModel
                         list += item.Name + "~";
                     }
                     var d = "USE?";
-                    var msg = d + list + "?END";
-                    msg = new TextOperations().MessageLength(msg);
+                    var g = new Encryption().Encrypt(d+list);
+                    var msg = new TextOperations().byteLength(g.Length.ToString());
+                    var fmsg = System.Text.Encoding.UTF8.GetBytes( msg );
+                    var send = new TextOperations().addBytes( fmsg, g);
                     foreach (var item in a.UserList)
                     {
-                        a.UserListSend(msg);
+                        a.UserListSend(send);
+
                     }
                 }
                 

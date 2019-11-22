@@ -119,6 +119,7 @@
     <Compile Include="Model\Msg_Info.cs" />
     <Compile Include="Model\Room_info.cs" />
     <Compile Include="ViewModel\Commands.cs" />
+    <Compile Include="ViewModel\Encryption.cs" />
     <Compile Include="ViewModel\TextOperations.cs" />
     <Compile Include="ViewModel\UserCommands.cs" />
     <Compile Include="ViewModel\GlobalMessage.cs" />

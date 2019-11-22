@@ -21,16 +21,16 @@ namespace MultiServe.Net.Model
         public string password { get; set; }
         public List<User> UserList = new List<User>();
 
-        public void SendRoom(string msg)
+        public void SendRoom(string prefix,string msg)
         {
             try{
                 foreach (var user in UserList)
                 {
-                    user.SendMessage(msg);
+                    user.SendMessage(prefix,msg);
                 } }catch (System.InvalidOperationException) { }
 
         }
-        public void SendRoomList(string msg)
+        public void SendRoomList(byte[] msg)
         {
             try { 
             foreach (var user in UserList)
@@ -40,7 +40,7 @@ namespace MultiServe.Net.Model
         }catch (System.InvalidOperationException) { }
 
 }
-        public void UserListSend(string msg)
+       public void UserListSend(byte[] msg)
         {
             try
             {
@@ -75,8 +75,8 @@ public void Create(string name, User creator,bool ispassword, string password)
                         MsgTime = DateTime.Now.Hour.ToString() + ":" + DateTime.Now.Minute.ToString()
                     };
                     var msgJson = JsonConvert.SerializeObject(msg);
-                    var c = new TextOperations().MessageLength("MSG?" + msgJson + "?END");
-                    creator.SendMessage(c);
+                    var c = new TextOperations().MessageLength( msgJson);
+                    creator.SendMessage("MSG?",c);
                 }
             }catch(System.ArgumentException)
             {
@@ -87,8 +87,8 @@ public void Create(string name, User creator,bool ispassword, string password)
                     MsgTime = DateTime.Now.Hour.ToString() + ":" + DateTime.Now.Minute.ToString()
                 };
                 var msgJson = JsonConvert.SerializeObject(msg);
-                var c = new TextOperations().MessageLength("MSG?"+msgJson+"?END");
-                creator.SendMessage(c);
+                var c = new TextOperations().MessageLength(msgJson);
+                creator.SendMessage("MSG?",c);
             }
         }
     public void Check(int Roomid)

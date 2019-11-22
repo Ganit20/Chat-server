@@ -38,7 +38,7 @@ namespace MultiClientServer.ViewModel
                     if(G!=null) {
                         
                         var json = JsonConvert.SerializeObject(new Msg_Info() { From = "info", Message = "Permission Granted" });
-                        G.SendMessage("MSG?" + json + "?END");
+                        G.SendMessage("MSG?" , json );
                     }
                     sendAdminInfo( new DBConnect(Listener.config).rankAdmin(id));
                     break;
@@ -51,7 +51,7 @@ namespace MultiClientServer.ViewModel
                     if (ge != null)
                     {
                         var json = JsonConvert.SerializeObject(new Msg_Info() { From = "info", Message = "Permission Lost" });
-                        G.SendMessage("MSG?" + json + "?END");
+                        G.SendMessage("MSG?" , json);
                     }
                     sendAdminInfo(new DBConnect(Listener.config).rankNormal(id));
                     break;
@@ -123,7 +123,7 @@ namespace MultiClientServer.ViewModel
                                     item.SetRoomID(0);
                                     Listener.Rooms.Find(e => e.id == 0).UserList.Add(item);
                                     var json = JsonConvert.SerializeObject(new Msg_Info() { From = "info", Message = "Your channel has been deleted you are chatting at: Main" });
-                                    G.SendMessage("MSG?" + json + "?END");
+                                    G.SendMessage("MSG?" , json );
                                     GlobalMessage.ServerMessage("Room " + c.name + " has been deleted by: " + person);
                                     Listener.Rooms.Remove(c);
                                 }
@@ -304,7 +304,7 @@ namespace MultiClientServer.ViewModel
             {
                 var send = info;
                 var json = JsonConvert.SerializeObject(new Msg_Info() { From = "info", Message = send });
-                G.SendMessage("MSG?" + json + "?END");
+                G.SendMessage("MSG?" , json );
             }
         }
     }
