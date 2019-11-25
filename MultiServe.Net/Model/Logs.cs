@@ -1,4 +1,5 @@
-﻿using System;
+﻿using MultiClientServer.ViewModel;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -12,7 +13,7 @@ namespace MultiServe.Net.Model
         public StreamWriter fs;
         readonly string path = "Logs";
         readonly string file = "Logs\\Logs-" + DateTime.Now.ToString("yyyy-MM-dd") + ".txt";
-        object control = new object();
+        
         public Logs()
         {
             
@@ -29,7 +30,7 @@ namespace MultiServe.Net.Model
 
         public void saveLogs(string message)
         {
-            lock (control)
+            lock (Listener.control)
             {
                 try
                 {

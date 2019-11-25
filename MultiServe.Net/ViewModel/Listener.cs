@@ -18,6 +18,7 @@ namespace MultiClientServer.ViewModel
         public static List<User> usersList = new List<User>();
         public static List<Room_info> Rooms = new List<Room_info>();
         public static int id = 0;
+        public static object control = new object();
         public static int roomid = 1;
         public static Dictionary<string, string> config = new Dictionary<string, string>();
         static public void StartListener()
