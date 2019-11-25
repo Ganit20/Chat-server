@@ -87,7 +87,7 @@ namespace MultiServe.Net.Model
                 
                 reply = new Encryption().Encrypt(prefix + data);
                 var replylength = new TextOperations().byteLength(reply.Length.ToString()) ;
-                byte[] k = System.Text.Encoding.ASCII.GetBytes(replylength);
+                byte[] k = System.Text.Encoding.UTF8.GetBytes(replylength);
                 var msg = new TextOperations().addBytes(k, reply);
                     Stream.Write(msg, 0, msg.Length);
                 }

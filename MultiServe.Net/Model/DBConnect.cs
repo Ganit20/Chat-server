@@ -3,6 +3,7 @@ using MySql.Data.MySqlClient;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net;
 using System.Net.Sockets;
 using System.Text;
 using System.Threading.Tasks;
@@ -31,7 +32,7 @@ namespace MultiServe.Net.Model
                 connection = new MySqlConnection(connectionString);
                 
                 OpenConnection();
-                Console.WriteLine("MySQL version : {0}", connection.ServerVersion);
+               
                 string sqlcheck = "SELECT EXISTS(" +
                     "SELECT  `TABLE_NAME` " +
                     "FROM `INFORMATION_SCHEMA`.`TABLES` " +
@@ -42,6 +43,7 @@ namespace MultiServe.Net.Model
                 int i = Convert.ToInt32(CheckRead);
                 if(i==0)
                 {
+                    Console.WriteLine("MySQL version : {0}", connection.ServerVersion);
                     Console.WriteLine("Creating Database Table");
                     CreateDatabase();
                 }
@@ -121,7 +123,7 @@ namespace MultiServe.Net.Model
             object result = loginC.ExecuteScalar();
             if (Convert.ToString(result).Equals(password))
             {
-                Console.WriteLine("User " + name + " looged in");
+                
                 return true;
 
             }
@@ -135,7 +137,8 @@ namespace MultiServe.Net.Model
                 MySqlCommand cmd = new MySqlCommand(sql, connection);
                 MySqlDataReader rdr = cmd.ExecuteReader();
                 rdr.Read();
-                User oUser = new User(rdr.GetInt32("id"), rdr.GetString("name"), stream, null, 0, tcp, rdr.GetString("password"), rdr.GetString("email"), rdr.GetString("p_rank"), rdr.GetInt32("Banned"), rdr.GetString("BANNEDFOR")); 
+                var IPA = ((IPEndPoint)tcp.Client.RemoteEndPoint).Address.ToString();
+                User oUser = new User(rdr.GetInt32("id"), rdr.GetString("name"), stream, IPA, 0, tcp, rdr.GetString("password"), rdr.GetString("email"), rdr.GetString("p_rank"), rdr.GetInt32("Banned"), rdr.GetString("BANNEDFOR")); 
                 Listener.usersList.Add(oUser);
                 GlobalMessage.UserJoined(oUser.Name, oUser.IP);
                 Listener.Rooms.Find(e => e.id == 0).UserList.Add(oUser);

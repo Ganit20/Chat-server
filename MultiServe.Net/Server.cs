@@ -11,18 +11,18 @@ namespace MultiClientServer
         public Server()
         {
             Console.WriteLine("starting server");
-           
            Task.Factory.StartNew(() => {
                Listener.StartListener();
                });
 
             while (true)
             {
-
-                String Command = Console.ReadLine();
+                
+                string Command = Console.ReadLine();
+                
                 Task.Factory.StartNew(() =>
                 {
-                    new Commands().SetCommandAsync(Command,"server");
+                    new Commands().SetCommandAsync(Command,"Server");
                 });
             }
         }

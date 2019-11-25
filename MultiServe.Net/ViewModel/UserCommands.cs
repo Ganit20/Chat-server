@@ -81,7 +81,7 @@ namespace MultiServe.Net.ViewModel
                 var i = System.Text.Encoding.UTF8.GetString(bytes);
                 var messag = new Encryption().Decrypt(bytes);
                 var msgdata = JsonConvert.DeserializeObject<Msg_Info>(messag);
-                data = Encoding.ASCII.GetString(message, 0, message.Length);
+                data = Encoding.UTF8.GetString(message, 0, message.Length);
                
 
 
@@ -126,8 +126,8 @@ namespace MultiServe.Net.ViewModel
             {
                 GlobalMessage.UserDisconnected(oUser);
             }
-            catch (ArgumentOutOfRangeException) { }
-            catch (IndexOutOfRangeException) { }
+            catch (ArgumentOutOfRangeException) { GlobalMessage.UserDisconnected(oUser); }
+            catch (IndexOutOfRangeException) { GlobalMessage.UserDisconnected(oUser); }
 
 
         } 
@@ -141,7 +141,7 @@ namespace MultiServe.Net.ViewModel
                 var SJson = JsonConvert.SerializeObject(g);
                 var msg = "?PAS?" + SJson + "?END";
                 msg = msg.Length + msg;
-                byte[] bmsg = System.Text.Encoding.ASCII.GetBytes(msg);
+                byte[] bmsg = System.Text.Encoding.UTF8.GetBytes(msg);
                 Stream.Write(bmsg,0,bmsg.Length);
             }else
             {
@@ -149,51 +149,48 @@ namespace MultiServe.Net.ViewModel
                 var SJson = JsonConvert.SerializeObject(g);
                 var msg = "?PAS?" + SJson + "?END";
                 msg = msg.Length + msg;
-                byte[] bmsg = System.Text.Encoding.ASCII.GetBytes(msg);
+                byte[] bmsg = System.Text.Encoding.UTF8.GetBytes(msg);
                 Stream.Write(bmsg, 0, bmsg.Length);
             }
         }
         public bool Register(NetworkStream stream,string UserInfo)
         {
-            var UserJson = JsonConvert.DeserializeObject<User>(UserInfo.Substring(4, UserInfo.LastIndexOf('?') - 4));
-            if (new DBConnect(Listener.config).UserRegister(UserJson.Name, UserJson.password, UserJson.email))
+            try
             {
-                var msg = "RDC?" + "Confirmed" + "?END";
-                msg = new TextOperations().MessageLength(msg);
-                stream.Write(Encoding.ASCII.GetBytes(msg), 0, msg.Length);
-                return true;
-            }
-            else
-            {
-                var msg = "RDC?" + "Nope" + "?END";
-                msg = new TextOperations().MessageLength(msg);
-                stream.Write(Encoding.ASCII.GetBytes(msg), 0, msg.Length);
-                return false;
-            }
+                var UserJson = JsonConvert.DeserializeObject<User>(UserInfo);
+                if (new DBConnect(Listener.config).UserRegister(UserJson.Name, UserJson.password, UserJson.email))
+                {
+                    var msg = "RDC?" + "Confirmed";
+                    var emsg = new Encryption().Encrypt(msg);
+                    var lmsg = Encoding.UTF8.GetBytes(new TextOperations().byteLength(emsg.Length.ToString()));
+                    stream.Write(new TextOperations().addBytes(lmsg, emsg), 0, lmsg.Length+emsg.Length);
+                    return true;
+                }
+                else
+                {
+                    var msg = "RDC?" + "Nope";
+                    var emsg = new Encryption().Encrypt(msg);
+                    var lmsg = Encoding.UTF8.GetBytes(new TextOperations().byteLength(emsg.Length.ToString()));
+                    stream.Write(new TextOperations().addBytes(lmsg, emsg), 0, lmsg.Length + emsg.Length);
+                    return false;
+                }
+            }catch(ArgumentOutOfRangeException e) { Console.WriteLine(e); return false; }
         }
         public bool Login(NetworkStream stream, string UserInfo,User oUser,TcpClient user)
         {
+                      var UserJson = JsonConvert.DeserializeObject<User>(UserInfo);
             string msg;
-            byte[] ByteLength = new byte[4];
-            string d = UserInfo.Substring(UserInfo.IndexOf('?') + 1, UserInfo.LastIndexOf('?') - UserInfo.IndexOf('?') - 1);
-            int bl = int.Parse(d);
-                byte[] bytes = new byte[bl];
-                Int32 leng = stream.Read(bytes, 0, bl);
-            Console.WriteLine(System.Text.Encoding.UTF8.GetString(bytes));
-            var messag = new Encryption().Decrypt(bytes);
-            var UserJson = JsonConvert.DeserializeObject<User>(messag);
             if (new DBConnect(Listener.config).UserLogin(UserJson.Name, UserJson.password))
             {
                 
                 oUser = new DBConnect(Listener.config).DownloadUserInfo(UserJson.Name, stream, user);
-                Console.WriteLine("Ban checking...");
                 if(oUser.banned ==1)
                 {
                     Console.WriteLine(oUser.Name + " is banned disconnecting");
                     Msg_Info m = new Msg_Info() { From = "Server", MsgTime = DateTime.UtcNow.ToString(), Message = "You Are banned for " + oUser.bannedFor };
                      msg = "BAN?"+JsonConvert.SerializeObject(m) +"?END";
                     msg =new TextOperations().MessageLength(msg);
-                    stream.Write(Encoding.ASCII.GetBytes(msg), 0, msg.Length);
+                    stream.Write(Encoding.UTF8.GetBytes(msg), 0, msg.Length);
                     GlobalMessage.UserDisconnected(oUser);
                     return false;
                 }else
@@ -202,7 +199,7 @@ namespace MultiServe.Net.ViewModel
                     HandleUser.oUser = oUser;
                     msg = "LOG?TRUE?END";
                     msg = new TextOperations().MessageLength(msg);
-                    stream.Write(Encoding.ASCII.GetBytes(msg), 0, msg.Length);
+                    stream.Write(Encoding.UTF8.GetBytes(msg), 0, msg.Length);
                     return true;
                 }
                 
@@ -212,7 +209,7 @@ namespace MultiServe.Net.ViewModel
             {
                  msg = "LOG?WRONG?END";
                 msg = new TextOperations().MessageLength(msg);
-                stream.Write(Encoding.ASCII.GetBytes(msg), 0, msg.Length);
+                stream.Write(Encoding.UTF8.GetBytes(msg), 0, msg.Length);
                 return false;
             }
         }

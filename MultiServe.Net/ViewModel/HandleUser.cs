@@ -1,4 +1,5 @@
-﻿using MultiClientServer.Model;
+﻿using App3;
+using MultiClientServer.Model;
 using MultiServe.Net.Model;
 using MultiServe.Net.ViewModel;
 using Newtonsoft.Json;
@@ -19,27 +20,31 @@ namespace MultiClientServer.ViewModel
         {
             TcpClient user = (TcpClient)obj;
             var stream = user.GetStream();
-            byte[] info = new Byte[8];
+            byte[] info = new Byte[4];
             bool done = false;
             while (!done)
             {
                 try {
-                    stream.Read(info, 0, 8);
-                    var UserInfo = System.Text.Encoding.ASCII.GetString(info);
-                    
-
-                    switch (UserInfo.Substring(0, UserInfo.IndexOf("?", 0, 4)))
+                    stream.Read(info, 0, 4);
+                    var UserInfo = Encoding.UTF8.GetString(info);
+                    string d = UserInfo.Substring(0,3);
+                    int bl = int.Parse(d);
+                    byte[] bytes = new byte[bl];
+                    Int32 leng = stream.Read(bytes, 0, bl);
+                    string fumsg = new Encryption().Decrypt(bytes);
+                    switch (fumsg.Substring(0,fumsg.IndexOf('?')))
                     {
                         case "REG":
-                            done = new UserCommands().Register(stream, UserInfo);
+                            done = new UserCommands().Register(stream, fumsg.Substring(4));
                             goto End;
                             break;
                         case "LOG":
-                            done = new UserCommands().Login(stream, UserInfo, oUser, user);
+                            done = new UserCommands().Login(stream, fumsg.Substring(4), oUser, user) ;
                             break;
                     }
-                } catch (System.IO.IOException e) { }
-                catch (System.ObjectDisposedException e) { goto End; Console.WriteLine(e); }
+                } catch (System.IO.IOException e) { goto End; }
+                catch (System.ObjectDisposedException e) { goto End; }
+                catch(ArgumentOutOfRangeException ) { goto End; }
             }
             byte[] ByteLength = new byte[8];
             byte[] message = new byte[120];
@@ -50,7 +55,7 @@ namespace MultiClientServer.ViewModel
                 try
                 {
                     Int32 byt = stream.Read(ByteLength, 0, 8);
-                    string c = System.Text.Encoding.ASCII.GetString(ByteLength, 0, 8);
+                    string c = System.Text.Encoding.UTF8.GetString(ByteLength, 0, 8);
                     switch (c.Substring(0, c.IndexOf("?", 0, 4)))
                     {
                         case "CRC":
@@ -66,17 +71,18 @@ namespace MultiClientServer.ViewModel
                 }
                 catch (IOException e )
                 {
-                    Console.WriteLine(e);
+                 
                     GlobalMessage.UserDisconnected(oUser);
                     break;
                 }
                 catch (ObjectDisposedException e)
                 {
-                    Console.WriteLine(e);
+                    
                     GlobalMessage.UserDisconnected(oUser);
                     break;
                 }
-                catch (System.ArgumentOutOfRangeException e) { Console.WriteLine(e); }
+                catch (System.ArgumentOutOfRangeException e) { GlobalMessage.UserDisconnected(oUser);
+                    break; }
             }
         End:;
         }

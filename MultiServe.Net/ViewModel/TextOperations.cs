@@ -17,7 +17,6 @@ namespace MultiServe.Net.ViewModel
         {
             byte[] bytes = new byte[LengthStream(info)];
             Int32 leng = Stream.Read(bytes, 0, bytes.Length);
-            Console.WriteLine(System.Text.Encoding.UTF8.GetString(bytes));
             var messag = new Encryption().Decrypt(bytes);
             var UserJson = JsonConvert.DeserializeObject<Room_info>(messag);
             return UserJson;
