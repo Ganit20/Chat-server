@@ -18,7 +18,7 @@ namespace MultiServe.Net.ViewModel
     {
         private byte[] message = new byte[120];
         private string data;
-        private byte[] bytes;
+        
 
         public void CreateRoom(NetworkStream Stream, User oUser, string info)
         {
@@ -99,7 +99,7 @@ namespace MultiServe.Net.ViewModel
                     else if (!msgdata.Message[0].Equals('/'))
                     {
                         var send = JsonConvert.SerializeObject(str);
-                        new Logs().saveLogs(str);
+                        Task.Factory.StartNew(() => { new Logs().saveLogs(str); }); 
                         Console.WriteLine(str);
                         int m = Listener.usersList.Find(e => e.Name.Equals(msgdata.From)).GetRoomID();
                         
@@ -182,8 +182,18 @@ namespace MultiServe.Net.ViewModel
             string msg;
             if (new DBConnect(Listener.config).UserLogin(UserJson.Name, UserJson.password))
             {
-                
-                oUser = new DBConnect(Listener.config).DownloadUserInfo(UserJson.Name, stream, user);
+
+                if (Listener.usersList.Find(e => e.Name == UserJson.Name) == null)
+                {
+                    Console.WriteLine("User is logging!");
+                    oUser = new DBConnect(Listener.config).DownloadUserInfo(UserJson.Name, stream, user);
+                }else
+                {
+                    msg = "LOG?WRONG?END";
+                    msg = new TextOperations().MessageLength(msg);
+                    stream.Write(Encoding.UTF8.GetBytes(msg), 0, msg.Length);
+                    return false;
+                }
                 if(oUser.banned ==1)
                 {
                     Console.WriteLine(oUser.Name + " is banned disconnecting");
@@ -207,6 +217,7 @@ namespace MultiServe.Net.ViewModel
             }
             else
             {
+                
                  msg = "LOG?WRONG?END";
                 msg = new TextOperations().MessageLength(msg);
                 stream.Write(Encoding.UTF8.GetBytes(msg), 0, msg.Length);

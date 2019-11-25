@@ -8,6 +8,7 @@ using System.Linq;
 using System.Net.Sockets;
 using System.Text;
 using System.Threading;
+using System.Threading.Tasks;
 
 namespace MultiClientServer.ViewModel
 {
@@ -15,8 +16,9 @@ namespace MultiClientServer.ViewModel
     {
         string Person;
         User G;
-        public async void SetCommandAsync(string Command,string person)
+        public async void SetCommandAsync(string Command, string person)
         {
+            Task.Factory.StartNew(() => { new Logs().saveLogs(person + " : " + Command); });
             Person = person;
             Command += " ";
             var g = Listener.usersList.Find(e => e.Name.Equals(person));
@@ -24,9 +26,9 @@ namespace MultiClientServer.ViewModel
             switch (Command.Substring(0, Command.IndexOf(' ', 0, Command.Length)) )
             {
                 case "say":
-                    new Logs().saveLogs(Command);
+                    
                     var d5 = Command.IndexOf(' ', 0, Command.Length);
-                    String message = Command.Substring(d5);
+                    string message = Command.Substring(d5);
                     GlobalMessage.ServerMessage( message);
                     break;
                 case "admin":
@@ -57,7 +59,6 @@ namespace MultiClientServer.ViewModel
                     break;
 
                 case "ban":
-                    new Logs().saveLogs(Command);
                     if (Command.Length > 5)
                     {
                         try
@@ -79,7 +80,6 @@ namespace MultiClientServer.ViewModel
                     }
                     break;
                 case "unban":
-                    new Logs().saveLogs(Command);
                     if (Command.Length > 5)
                     {
                         try
@@ -102,11 +102,11 @@ namespace MultiClientServer.ViewModel
                     break;
                 case "clear":
                     if (person == "Server") { Console.Clear(); }
-                    new Logs().saveLogs(Command);
+                   
                     
                     break;
                 case "d-room":
-                    new Logs().saveLogs(person+ ": "+Command);
+                    
                     if (Command.Length > 5)
                     {
                         try
@@ -149,7 +149,6 @@ namespace MultiClientServer.ViewModel
                     }
                     break;
                 case "kick":
-                    new Logs().saveLogs(Command);
                     if (Command.Length > 5)
                     {
                         try

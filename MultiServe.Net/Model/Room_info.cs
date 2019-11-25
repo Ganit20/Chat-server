@@ -64,7 +64,7 @@ public void Create(string name, User creator,bool ispassword, string password)
                     Listener.Rooms.Add(roomt);
                     Listener.roomid++;
                     Console.Write("Room: " + name + " created by: " + creator.Name + "\r\n");
-                    new Logs().saveLogs("Room: " + name + " created by: " + creator.Name);
+                    Task.Factory.StartNew(() => { new Logs().saveLogs("Room: " + name + " created by: " + creator.Name); });
                     GlobalMessage.SendRoomList();
                 }else
                 {

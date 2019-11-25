@@ -18,11 +18,11 @@ namespace MultiClientServer.ViewModel
         public static int Control = 0;
         public static int ControlR = 0;
 
-        public static void UserJoined(String Username, String IP)
+        public static void UserJoined(string Username, string IP)
         {
                 Console.WriteLine(DateTime.Now + " New Connection " + Username + " IP: " + IP);
                 ServerMessage(Username + " Joined");
-            new Logs().saveLogs(DateTime.UtcNow + Username + " Joined");
+            Task.Factory.StartNew(() => { new Logs().saveLogs(DateTime.UtcNow + Username + " Joined");}); 
             Task.Factory.StartNew(() =>
             {
                 GlobalMessage.SendUserList();
@@ -45,7 +45,10 @@ namespace MultiClientServer.ViewModel
                 Listener.usersList.Remove(usr);
                 SendUserList();
                 ServerMessage(usr.Name + " Disconnected");
-                new Logs().saveLogs(DateTime.UtcNow + usr.Name + " Disconnected");
+                Task.Factory.StartNew(() =>
+                {
+                    new Logs().saveLogs(DateTime.UtcNow + usr.Name + " Disconnected");
+                });
             }catch(System.NullReferenceException) { }
         }
         public static void ServerMessage(String messages)

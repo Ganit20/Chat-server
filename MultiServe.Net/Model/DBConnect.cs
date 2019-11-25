@@ -98,7 +98,8 @@ namespace MultiServe.Net.Model
             {
                 Console.WriteLine("Mysql Connect Error");
                 Console.WriteLine("You need installed mysql server. You can configure it in server.config" );
-                new Logs().saveLogs(e.ToString());
+                Task.Factory.StartNew(() => { new Logs().saveLogs(e.ToString()); });
+               
                 return false;
             }
         }
@@ -131,18 +132,19 @@ namespace MultiServe.Net.Model
         }
         public User DownloadUserInfo(string name,NetworkStream stream,TcpClient tcp)
         {
-            try
-            {
-                string sql = "SELECT * FROM USER WHERE name='" + name + "';";
-                MySqlCommand cmd = new MySqlCommand(sql, connection);
-                MySqlDataReader rdr = cmd.ExecuteReader();
-                rdr.Read();
-                var IPA = ((IPEndPoint)tcp.Client.RemoteEndPoint).Address.ToString();
-                User oUser = new User(rdr.GetInt32("id"), rdr.GetString("name"), stream, IPA, 0, tcp, rdr.GetString("password"), rdr.GetString("email"), rdr.GetString("p_rank"), rdr.GetInt32("Banned"), rdr.GetString("BANNEDFOR")); 
-                Listener.usersList.Add(oUser);
-                GlobalMessage.UserJoined(oUser.Name, oUser.IP);
-                Listener.Rooms.Find(e => e.id == 0).UserList.Add(oUser);
-                return oUser;
+            try { 
+            
+                    string sql = "SELECT * FROM USER WHERE name='" + name + "';";
+                    MySqlCommand cmd = new MySqlCommand(sql, connection);
+                    MySqlDataReader rdr = cmd.ExecuteReader();
+                    rdr.Read();
+                    var IPA = ((IPEndPoint)tcp.Client.RemoteEndPoint).Address.ToString();
+                    User oUser = new User(rdr.GetInt32("id"), rdr.GetString("name"), stream, IPA, 0, tcp, rdr.GetString("password"), rdr.GetString("email"), rdr.GetString("p_rank"), rdr.GetInt32("Banned"), rdr.GetString("BANNEDFOR"));
+                    Listener.usersList.Add(oUser);
+                    GlobalMessage.UserJoined(oUser.Name, oUser.IP);
+                    Listener.Rooms.Find(e => e.id == 0).UserList.Add(oUser);
+                    return oUser;
+                
             }catch(MySqlException e)
             {
                 Console.WriteLine(e);

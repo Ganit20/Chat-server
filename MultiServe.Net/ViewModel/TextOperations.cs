@@ -29,7 +29,11 @@ namespace MultiServe.Net.ViewModel
             GlobalMessage.SendUserList();
             new Room_info().Check(OldRoom.id);
             changer.SendMessage("SSG?","You are chatting at: " + NewRoom.name );
-            new Logs().saveLogs(DateTime.UtcNow + changer.Name + " Changed room to " + NewRoom.name);
+            Task.Factory.StartNew(() =>
+            {
+                new Logs().saveLogs(DateTime.UtcNow + changer.Name + " Changed room to " + NewRoom.name);
+            });
+           
         }
         public string byteLength(string leng)
         {
